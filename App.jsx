@@ -2343,6 +2343,10 @@ export default function App() {
       const position = `${row}-${col}`;
       const newTokens = { ...tokens };
 
+      // First get current room data to preserve all existing data
+      const snapshot = await get(firebaseRef.current);
+      const currentRoomData = snapshot.val() || {};
+
       if (tokens[position]) {
         delete newTokens[position];
       } else {
@@ -2372,14 +2376,10 @@ export default function App() {
         }
       }
 
-      // Update Firebase
+      // Update Firebase while preserving all existing data
       await set(firebaseRef.current, {
+        ...currentRoomData,
         tokens: newTokens,
-        layers,
-        initiative,
-        inCombat,
-        currentTurn,
-        partyLoot,
         lastUpdate: Date.now()
       });
 
@@ -2388,7 +2388,7 @@ export default function App() {
       console.error('Error updating tokens:', error);
       Alert.alert('Error', 'Failed to update token');
     }
-  }, [tokens, currentColor, layers, initiative, inCombat, currentTurn, partyLoot, selectedCharacter, playerName, isDM]);
+  }, [tokens, currentColor, selectedCharacter, playerName, isDM]);
 
   // Update the savePlayerData function
   const savePlayerData = useCallback(async (updatedCharacters) => {
@@ -2720,10 +2720,21 @@ export default function App() {
                 lastUpdate: Date.now()
               });
 
-              // Also save to room data
+              // Also save to room data while preserving campaign story
               if (firebaseRef.current) {
-                const roomPlayerRef = ref(database, `rooms/${roomCode}/players/${playerName}`);
-                await set(roomPlayerRef, {
+                // First get the current room data
+                const roomSnapshot = await get(firebaseRef.current);
+                const currentRoomData = roomSnapshot.val() || {};
+                
+                // Update the room data while preserving campaign story and other data
+                await set(firebaseRef.current, {
+                  ...currentRoomData,
+                  tokens,
+                  layers,
+                  initiative,
+                  inCombat,
+                  currentTurn,
+                  partyLoot,
                   characters: newCharacters,
                   lastUpdate: Date.now()
                 });
@@ -3228,20 +3239,19 @@ export default function App() {
                           style={[styles.quickActionButton, { backgroundColor: THEME.accent, width: 100 }]}
                           onPress={() => {
                             if (firebaseRef.current) {
-                              set(firebaseRef.current, {
-                                ...initialGameState,
-                                tokens,
-                                layers,
-                                initiative,
-                                inCombat,
-                                currentTurn,
-                                partyLoot,
-                                characters,
-                                campaignStory: {
-                                  text: storyText,
-                                  lastUpdate: Date.now(),
-                                  updatedBy: playerName
-                                }
+                              // First get the current room data
+                              get(firebaseRef.current).then((snapshot) => {
+                                const currentRoomData = snapshot.val() || {};
+                                
+                                // Update the room data while preserving all existing data
+                                set(firebaseRef.current, {
+                                  ...currentRoomData,
+                                  campaignStory: {
+                                    text: storyText,
+                                    lastUpdate: Date.now(),
+                                    updatedBy: playerName
+                                  }
+                                });
                               });
                             }
                           }}
