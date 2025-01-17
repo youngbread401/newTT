@@ -2580,13 +2580,14 @@ export default function App() {
         owner: 'DM'
       };
 
+      // First get current room data to preserve all existing data
+      const snapshot = await get(firebaseRef.current);
+      const currentRoomData = snapshot.val() || {};
+
+      // Update Firebase while preserving all existing data
       await set(firebaseRef.current, {
+        ...currentRoomData,
         tokens: newTokens,
-        layers,
-        initiative,
-        inCombat,
-        currentTurn,
-        partyLoot,
         lastUpdate: Date.now()
       });
 
@@ -2597,7 +2598,7 @@ export default function App() {
       console.error('Error adding enemy:', error);
       Alert.alert('Error', 'Failed to add enemy');
     }
-  }, [selectedPosition, tokens, layers, initiative, inCombat, currentTurn, partyLoot]);
+  }, [selectedPosition, tokens]);
 
   // Main render return
   return (
