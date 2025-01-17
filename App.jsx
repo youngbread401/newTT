@@ -1476,17 +1476,20 @@ const TokenModal = memo(({
                 style={[styles.modalButton, { backgroundColor: THEME.danger }]}
                 onPress={() => {
                   if (firebaseRef.current && selectedToken) {
-                    const newTokens = { ...tokens };
-                    delete newTokens[selectedToken.position];
-                    set(firebaseRef.current, { 
-                      ...initialGameState,
-                      tokens: newTokens,
-                      layers,
-                      initiative,
-                      inCombat,
-                      currentTurn
+                    // First get current room data
+                    get(firebaseRef.current).then((snapshot) => {
+                      const currentRoomData = snapshot.val() || {};
+                      const newTokens = { ...tokens };
+                      delete newTokens[selectedToken.position];
+                      
+                      // Update while preserving existing data
+                      set(firebaseRef.current, { 
+                        ...currentRoomData,
+                        tokens: newTokens,
+                        lastUpdate: Date.now()
+                      });
+                      setShowTokenModal(false);
                     });
-                    setShowTokenModal(false);
                   }
                 }}
               >
@@ -1497,19 +1500,22 @@ const TokenModal = memo(({
                 style={[styles.modalButton, { backgroundColor: THEME.success }]}
                 onPress={() => {
                   if (firebaseRef.current && selectedToken) {
-                    const newTokens = {
-                      ...tokens,
-                      [selectedToken.position]: selectedToken
-                    };
-                    set(firebaseRef.current, {
-                      ...initialGameState,
-                      tokens: newTokens,
-                      layers,
-                      initiative,
-                      inCombat,
-                      currentTurn
+                    // First get current room data
+                    get(firebaseRef.current).then((snapshot) => {
+                      const currentRoomData = snapshot.val() || {};
+                      const newTokens = {
+                        ...tokens,
+                        [selectedToken.position]: selectedToken
+                      };
+                      
+                      // Update while preserving existing data
+                      set(firebaseRef.current, {
+                        ...currentRoomData,
+                        tokens: newTokens,
+                        lastUpdate: Date.now()
+                      });
+                      setShowTokenModal(false);
                     });
-                    setShowTokenModal(false);
                   }
                 }}
               >
