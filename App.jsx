@@ -29,6 +29,7 @@ import {
 import { debounce } from 'lodash';
 import { ScrollView as GestureScrollView } from 'react-native-gesture-handler';
 import { DiceRoller } from './components/DiceModel';
+import ColorPicker from 'react-native-wheel-color-picker';
 
 // Firebase configuration
 const firebaseConfig = {
@@ -55,7 +56,39 @@ const COLORS = [
   '#3F51B5',  // Indigo
   '#673AB7',  // Deep Purple
   '#2196F3',  // Blue
-  '#B39DDB'   // Light Purple
+  '#B39DDB',  // Light Purple
+  '#FF5252',  // Red
+  '#FF4081',  // Pink
+  '#E91E63',  // Deep Pink
+  '#9C27B0',  // Purple
+  '#009688',  // Green
+  '#4CAF50',  // Light Green
+  '#8BC34A',  // Lime
+  '#CDDC39',  // Yellow-Green
+  '#FFC107',  // Amber
+  '#FF9800',  // Orange
+  '#FF5722',  // Deep Orange
+  '#795548',  // Brown
+  '#607D8B',  // Blue Grey
+  '#F44336',  // Bright Red
+  '#E53935',  // Dark Red
+  '#D32F2F',  // Darker Red
+  '#C2185B',  // Dark Pink
+  '#7B1FA2',  // Dark Purple
+  '#512DA8',  // Dark Indigo
+  '#303F9F',  // Dark Blue
+  '#1976D2',  // Medium Blue
+  '#0288D1',  // Light Blue
+  '#0097A7',  // Cyan
+  '#00796B',  // Dark Teal
+  '#388E3C',  // Dark Green
+  '#689F38',  // Olive Green
+  '#AFB42B',  // Dark Lime
+  '#FBC02D',  // Golden
+  '#FFA000',  // Dark Amber
+  '#F57C00',  // Dark Orange
+  '#E64A19',  // Burnt Orange
+  '#5D4037'   // Dark Brown
 ];
 const GRID_SIZE = 10;
 const ABILITY_SCORES = ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA'];
@@ -178,7 +211,8 @@ const initialGameState = {
     terrain: {},
     tokens: {},
     effects: {},
-    fog: {}
+    fog: {},
+    aoe: {} // Add AoE layer
   },
   initiative: [],
   inCombat: false,
@@ -1561,61 +1595,62 @@ const RoomModal = memo(({
   setRoomCode, 
   isJoining, 
   connectToRoom 
-}) => (
-  <Modal
-    visible={showRoomModal}
-    transparent={true}
-    animationType="fade"
-    onRequestClose={() => {}}
-    style={{ zIndex: 999 }} // Add z-index to Modal
-  >
-    <View style={[modalStyles.modalOverlay, { pointerEvents: 'auto' }]}>
-      <View style={modalStyles.modalContent}>
-        <Text style={styles.modalTitle}>Join Room</Text>
-        <TextInput
-          style={[styles.input, { marginBottom: 15, zIndex: 1002 }]} // Add z-index to input
-          value={roomCode}
-          onChangeText={(text) => {
-            setRoomCode(text.trim().toLowerCase());
-          }}
-          placeholder="Enter room code..."
-          placeholderTextColor={THEME.text.light + '80'}
-          autoCapitalize="none"
-          autoCorrect={false}
-          editable={!isJoining}
-          autoFocus={true}
-          blurOnSubmit={false}
-        />
-        <TouchableOpacity
-          style={[
-            styles.modalButton,
-            { 
-              backgroundColor: isJoining ? THEME.background.secondary : THEME.success,
-              width: '100%',
-              zIndex: 1002 // Add z-index to button
-            }
-          ]}
-          onPress={() => {
-            Keyboard.dismiss();
-            connectToRoom(roomCode);
-          }}
-          disabled={isJoining}
-        >
-          {isJoining ? (
-            <View style={styles.loadingButtonContent}>
-              <ActivityIndicator color={THEME.text.light} />
-              <Text style={[styles.buttonText, { marginLeft: 10 }]}>
-                Connecting...
-              </Text>
-            </View>
-          ) : (
-            <Text style={styles.buttonText}>Join Room</Text>
-          )}
-        </TouchableOpacity>
+}) => {
+  if (!showRoomModal) return null;
+  
+  return (
+    <Modal
+      visible={true}
+      transparent={true}
+      animationType="fade"
+      onRequestClose={() => {}}
+    >
+      <View style={[modalStyles.modalOverlay, { backgroundColor: 'rgba(0, 0, 0, 0.8)' }]}>
+        <View style={modalStyles.modalContent}>
+          <Text style={styles.modalTitle}>Join Room</Text>
+          <TextInput
+            style={[styles.input, { marginBottom: 15 }]}
+            value={roomCode}
+            onChangeText={(text) => {
+              setRoomCode(text.trim().toLowerCase());
+            }}
+            placeholder="Enter room code..."
+            placeholderTextColor={THEME.text.light + '80'}
+            autoCapitalize="none"
+            autoCorrect={false}
+            editable={!isJoining}
+            autoFocus={true}
+          />
+          <TouchableOpacity
+            style={[
+              styles.modalButton,
+              { 
+                backgroundColor: isJoining ? THEME.background.secondary : THEME.success,
+                width: '100%'
+              }
+            ]}
+            onPress={() => {
+              Keyboard.dismiss();
+              connectToRoom(roomCode);
+            }}
+            disabled={isJoining}
+          >
+            {isJoining ? (
+              <View style={styles.loadingButtonContent}>
+                <ActivityIndicator color={THEME.text.light} />
+                <Text style={[styles.buttonText, { marginLeft: 10 }]}>
+                  Connecting...
+                </Text>
+              </View>
+            ) : (
+              <Text style={styles.buttonText}>Join Room</Text>
+            )}
+          </TouchableOpacity>
+        </View>
       </View>
-    </View>
-  </Modal>
-));
+    </Modal>
+  );
+});
 
 const PartyLootModal = memo(({ visible, onClose, partyLoot, onUpdate, playerName }) => {
   const [editedLoot, setEditedLoot] = useState({
@@ -2173,6 +2208,53 @@ const EnemySelectModal = memo(({ visible, onClose, onSelect }) => {
   );
 });
 
+// Add new ColorWheel component before the App component
+const ColorWheelModal = memo(({ visible, onClose, onSelectColor, initialColor }) => {
+  const [color, setColor] = useState(initialColor || '#FF0000');
+
+  return (
+    <Modal
+      visible={visible}
+      transparent={true}
+      animationType="fade"
+      onRequestClose={onClose}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={[styles.modalContent, { width: isSmallScreen ? '90%' : 400, padding: 20 }]}>
+          <Text style={styles.modalTitle}>Select Color</Text>
+          <View style={{ height: 300, marginVertical: 20 }}>
+            <ColorPicker
+              color={color}
+              onColorChange={setColor}
+              thumbSize={30}
+              sliderSize={30}
+              noSnap={true}
+              row={false}
+            />
+          </View>
+          <View style={styles.modalButtons}>
+            <TouchableOpacity
+              style={[styles.modalButton, { backgroundColor: THEME.background.secondary }]}
+              onPress={onClose}
+            >
+              <Text style={styles.buttonText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.modalButton, { backgroundColor: THEME.success }]}
+              onPress={() => {
+                onSelectColor(color);
+                onClose();
+              }}
+            >
+              <Text style={styles.buttonText}>Select</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+});
+
 export default function App() {
   // Add calculateModifier here
   const calculateModifier = (score) => {
@@ -2226,6 +2308,8 @@ export default function App() {
   const [showEnemySelect, setShowEnemySelect] = useState(false);
   const [selectedPosition, setSelectedPosition] = useState(null);
   const [storyText, setStoryText] = useState('');
+  const [isAoeMode, setIsAoeMode] = useState(false);
+  const [showColorWheel, setShowColorWheel] = useState(false);
 
   // Refs
   const firebaseRef = useRef(null);
@@ -2347,6 +2431,32 @@ export default function App() {
 
     try {
       const position = `${row}-${col}`;
+      
+      // Handle AoE mode
+      if (isAoeMode) {
+        const snapshot = await get(firebaseRef.current);
+        const currentRoomData = snapshot.val() || {};
+        const currentAoe = currentRoomData.layers?.aoe || {};
+        
+        const newAoe = { ...currentAoe };
+        if (newAoe[position]) {
+          delete newAoe[position];
+        } else {
+          newAoe[position] = { color: currentColor };
+        }
+
+        await set(firebaseRef.current, {
+          ...currentRoomData,
+          layers: {
+            ...currentRoomData.layers,
+            aoe: newAoe
+          },
+          lastUpdate: Date.now()
+        });
+        return;
+      }
+
+      // Original token handling code
       const newTokens = { ...tokens };
 
       // First get current room data to preserve all existing data
@@ -2394,13 +2504,17 @@ export default function App() {
       console.error('Error updating tokens:', error);
       Alert.alert('Error', 'Failed to update token');
     }
-  }, [tokens, currentColor, selectedCharacter, playerName, isDM]);
+  }, [tokens, isDM, selectedCharacter, playerName, currentColor, isAoeMode]);
 
   // Update the savePlayerData function
   const savePlayerData = useCallback(async (updatedCharacters) => {
     if (!playerName || !roomCode) return;
 
     try {
+      // First get current room data to preserve existing data
+      const roomSnapshot = await get(ref(database, `rooms/${roomCode}`));
+      const currentRoomData = roomSnapshot.val() || {};
+
       // Save to both the room and a separate players collection
       const roomPlayerRef = ref(database, `rooms/${roomCode}/players/${playerName}`);
       const globalPlayerRef = ref(database, `players/${playerName}`);
@@ -2413,15 +2527,26 @@ export default function App() {
       // Update both locations
       await Promise.all([
         set(roomPlayerRef, playerData),
-        set(globalPlayerRef, playerData)
+        set(globalPlayerRef, playerData),
+        // Update room data while preserving existing data
+        set(ref(database, `rooms/${roomCode}`), {
+          ...currentRoomData,
+          players: {
+            ...(currentRoomData.players || {}),
+            [playerName]: playerData
+          }
+        })
       ]);
+
+      // Update local state after successful save
+      setCharacters(updatedCharacters);
     } catch (error) {
       console.error('Error saving player data:', error);
       Alert.alert('Error', 'Failed to save character data');
     }
   }, [playerName, roomCode]);
 
-  // Update the connectToRoom function
+  // Update the connectToRoom function's onValue listener
   const connectToRoom = useCallback(async (code) => {
     if (!code.trim() || !playerName) {
       Alert.alert("Error", "Please enter a room code and player name");
@@ -2435,9 +2560,13 @@ export default function App() {
       // First try to load player's global data
       const globalPlayerRef = ref(database, `players/${playerName}`);
       const playerSnapshot = await get(globalPlayerRef);
+      let savedCharacters = [];
+      
       if (playerSnapshot.exists()) {
         const playerData = playerSnapshot.val();
-        setCharacters(playerData.characters || []);
+        savedCharacters = playerData.characters || [];
+        // Set characters from global data first
+        setCharacters(savedCharacters);
       }
 
       const gameRef = ref(database, `rooms/${code}`);
@@ -2446,7 +2575,37 @@ export default function App() {
       // Check if room exists
       const snapshot = await get(gameRef);
       if (!snapshot.exists()) {
-        await set(gameRef, initialGameState);
+        // If room doesn't exist, create it with the player's characters
+        await set(gameRef, {
+          ...initialGameState,
+          players: {
+            [playerName]: {
+              characters: savedCharacters,
+              lastUpdate: Date.now()
+            }
+          }
+        });
+      } else {
+        // If room exists, check for room-specific character data
+        const roomData = snapshot.val();
+        if (roomData.players && roomData.players[playerName]) {
+          const roomCharacters = roomData.players[playerName].characters || [];
+          // Update characters with room-specific data if it exists
+          setCharacters(roomCharacters);
+        } else {
+          // If no room-specific data, update room with player's global characters
+          const updatedRoomData = {
+            ...roomData,
+            players: {
+              ...(roomData.players || {}),
+              [playerName]: {
+                characters: savedCharacters,
+                lastUpdate: Date.now()
+              }
+            }
+          };
+          await set(gameRef, updatedRoomData);
+        }
       }
 
       // Set up real-time listener
@@ -2459,11 +2618,23 @@ export default function App() {
           setInCombat(data.inCombat || false);
           setCurrentTurn(data.currentTurn || 0);
           setPartyLoot(data.partyLoot || initialGameState.partyLoot);
-          setStoryText(data.campaignStory?.text || '');
+          
+          // Only update story text if it's different from current text
+          // and if it was updated by someone else
+          if (data.campaignStory?.text !== undefined && 
+              data.campaignStory?.updatedBy !== playerName) {
+            setStoryText(data.campaignStory.text);
+          }
 
-          // Update characters from room data if they exist
+          // Only update characters if they've changed
           if (data.players && data.players[playerName]) {
-            setCharacters(data.players[playerName].characters || []);
+            const newCharacters = data.players[playerName].characters || [];
+            setCharacters(prevCharacters => {
+              // Compare lastUpdate timestamps to determine if we should update
+              const prevTimestamp = data.players[playerName].lastUpdate || 0;
+              const currentTimestamp = Date.now();
+              return prevTimestamp > currentTimestamp ? newCharacters : prevCharacters;
+            });
           }
         }
       });
@@ -2871,26 +3042,8 @@ export default function App() {
                           text: "Leave", 
                           style: "destructive",
                           onPress: () => {
-                            // Disconnect from Firebase
-                            if (unsubscribeRef.current) {
-                              unsubscribeRef.current();
-                              unsubscribeRef.current = null;
-                            }
-                            if (firebaseRef.current) {
-                              off(firebaseRef.current);
-                              firebaseRef.current = null;
-                            }
-
-                            // Reset state
-                            setIsConnected(false);
-                            setRoomCode('');
-                            setTokens({});
-                            setInitiative([]);
-                            setInCombat(false);
-                            setCurrentTurn(0);
-                            setPartyLoot(initialGameState.partyLoot);
+                            handleDisconnect();
                             setShowRoomModal(true);
-                            setShowPlayerNameModal(true);
                           }
                         }
                       ]
@@ -2909,6 +3062,20 @@ export default function App() {
                 >
                   <Text style={styles.buttonText}>DM Mode</Text>
                 </TouchableOpacity>
+
+                {/* Add AoE toggle button to controls */}
+                <View style={styles.controls}>
+                  {/* ... existing control buttons ... */}
+                  <TouchableOpacity
+                    style={[
+                      styles.controlButton,
+                      { backgroundColor: isAoeMode ? THEME.accent : THEME.background.secondary }
+                    ]}
+                    onPress={() => setIsAoeMode(!isAoeMode)}
+                  >
+                    <Text style={styles.buttonText}>AoE Mode</Text>
+                  </TouchableOpacity>
+                </View>
               </ScrollView>
             </View>
             <ScrollView style={styles.content}>
@@ -3152,17 +3319,13 @@ export default function App() {
                       ]}>
                         {/* Color Picker */}
                         <View style={styles.colorPicker}>
-                          {COLORS.map(color => (
-                            <TouchableOpacity
-                              key={color}
-                              style={[
-                                styles.colorButton,
-                                { backgroundColor: color },
-                                color === currentColor && styles.selectedColor
-                              ]}
-                              onPress={() => setCurrentColor(color)}
-                            />
-                          ))}
+                          <TouchableOpacity
+                            style={[
+                              styles.colorButton,
+                              { backgroundColor: currentColor, width: 40, height: 40 }
+                            ]}
+                            onPress={() => setShowColorWheel(true)}
+                          />
                         </View>
 
                         {/* Grid */}
@@ -3180,6 +3343,10 @@ export default function App() {
                                   style={[
                                     styles.cell,
                                     token && { backgroundColor: token.color },
+                                    layers.aoe?.[position] && {
+                                      backgroundColor: layers.aoe[position].color,
+                                      opacity: 0.5
+                                    },
                                     isCurrentTurn && styles.currentTurn
                                   ]}
                                   onPress={() => handleCellPress(row, col)}
@@ -3391,6 +3558,12 @@ export default function App() {
                           >
                             <Text style={styles.quickActionText}>Inventory</Text>
                           </TouchableOpacity>
+                          <TouchableOpacity
+                            style={[styles.quickActionButton, { backgroundColor: THEME.danger }]}
+                            onPress={() => setShowDeleteModal(true)}
+                          >
+                            <Text style={styles.quickActionText}>Delete Character</Text>
+                          </TouchableOpacity>
                         </View>
                       </>
                     )}
@@ -3508,6 +3681,12 @@ export default function App() {
           setSelectedPosition(null);
         }}
         onSelect={handleEnemySelect}
+      />
+      <ColorWheelModal
+        visible={showColorWheel}
+        onClose={() => setShowColorWheel(false)}
+        onSelectColor={setCurrentColor}
+        initialColor={currentColor}
       />
     </SafeAreaView>
   );
