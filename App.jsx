@@ -2755,10 +2755,8 @@ export default function App() {
           setPartyLoot(data.partyLoot || initialGameState.partyLoot);
           setPinnedNotes(data.pinnedNotes || []);
           
-          // Only update story text if it's different from current text
-          // and if it was updated by someone else
-          if (data.campaignStory?.text !== undefined && 
-              data.campaignStory?.updatedBy !== playerName) {
+          // Always load the campaign story text if it exists
+          if (data.campaignStory?.text !== undefined) {
             setStoryText(data.campaignStory.text);
           }
 
