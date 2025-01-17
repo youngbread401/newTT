@@ -232,6 +232,7 @@ const initialGameState = {
     lastUpdate: null,
     updatedBy: null
   },
+  pinnedNotes: [],
   lastUpdate: Date.now()
 };
 
@@ -2255,6 +2256,59 @@ const ColorWheelModal = memo(({ visible, onClose, onSelectColor, initialColor })
   );
 });
 
+// Add this new component near the other modal components
+const PinnedNotesModal = memo(({ visible, onClose, notes, onAddNote, onDeleteNote, newNote, setNewNote }) => {
+  if (!visible) return null;
+
+  return (
+    <Modal
+      visible={visible}
+      transparent={true}
+      animationType="fade"
+      onRequestClose={onClose}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={[styles.modalContent, { width: '90%', maxWidth: 500 }]}>
+          <Text style={styles.modalTitle}>Pinned Notes</Text>
+          <TextInput
+            style={[styles.input, { marginBottom: 10 }]}
+            value={newNote}
+            onChangeText={setNewNote}
+            placeholder="Add a new note..."
+            placeholderTextColor={THEME.text.light + '80'}
+            multiline
+          />
+          <TouchableOpacity 
+            style={[styles.modalButton, { backgroundColor: THEME.success, marginBottom: 15 }]}
+            onPress={onAddNote}
+          >
+            <Text style={styles.buttonText}>Add Note</Text>
+          </TouchableOpacity>
+          <ScrollView style={{ maxHeight: 300 }}>
+            {notes.map(note => (
+              <View key={note.id} style={[styles.infoCard, { marginBottom: 5, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
+                <Text style={[styles.buttonText, { flex: 1 }]}>{note.text}</Text>
+                <TouchableOpacity 
+                  style={[styles.modalButton, { backgroundColor: THEME.danger, padding: 5, marginLeft: 10 }]}
+                  onPress={() => onDeleteNote(note.id)}
+                >
+                  <Text style={styles.buttonText}>×</Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+          </ScrollView>
+          <TouchableOpacity
+            style={[styles.modalButton, { backgroundColor: THEME.background.secondary, marginTop: 15 }]}
+            onPress={onClose}
+          >
+            <Text style={styles.buttonText}>Close</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+});
+
 export default function App() {
   // Add calculateModifier here
   const calculateModifier = (score) => {
@@ -2300,7 +2354,7 @@ export default function App() {
   const [showInventory, setShowInventory] = useState(false);
   const [playerName, setPlayerName] = useState('');
   const [showPlayerNameModal, setShowPlayerNameModal] = useState(true);
-  const [rollType, setRollType] = useState('normal'); // 'normal', 'advantage', or 'disadvantage'
+  const [rollType, setRollType] = useState('normal');
   const [diceResult, setDiceResult] = useState(null);
   const [showDiceResult, setShowDiceResult] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -2310,6 +2364,91 @@ export default function App() {
   const [storyText, setStoryText] = useState('');
   const [isAoeMode, setIsAoeMode] = useState(false);
   const [showColorWheel, setShowColorWheel] = useState(false);
+  // Add pinned notes state
+  const [pinnedNotes, setPinnedNotes] = useState([]);
+  const [newNote, setNewNote] = useState('');
+  const [showPinnedNotes, setShowPinnedNotes] = useState(false);
+
+  // Add notes styles
+  const noteStyles = StyleSheet.create({
+    notesPanel: {
+      backgroundColor: THEME.background.panel,
+      padding: 15,
+      borderRadius: 10,
+      marginBottom: 15,
+    },
+    noteInput: {
+      backgroundColor: THEME.background.primary,
+      borderRadius: 5,
+      padding: 10,
+      color: THEME.text.light,
+      marginBottom: 10,
+    },
+    addButton: {
+      backgroundColor: THEME.success,
+      padding: 10,
+      borderRadius: 5,
+      alignItems: 'center',
+      marginBottom: 10,
+    },
+    noteItem: {
+      backgroundColor: THEME.background.primary,
+      padding: 10,
+      borderRadius: 5,
+      marginBottom: 5,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    noteText: {
+      color: THEME.text.light,
+      flex: 1,
+      marginRight: 10,
+    },
+    deleteButton: {
+      padding: 5,
+      borderRadius: 5,
+    },
+    deleteText: {
+      color: THEME.danger,
+      fontSize: 18,
+      fontWeight: 'bold',
+    },
+  });
+
+  // Add note handling functions
+  const handleAddNote = useCallback(() => {
+    if (newNote.trim() && firebaseRef.current) {
+      const note = { id: Date.now(), text: newNote.trim(), addedBy: playerName };
+      setPinnedNotes(prev => [...prev, note]);
+      setNewNote('');
+
+      // Save to Firebase
+      get(firebaseRef.current).then((snapshot) => {
+        const currentData = snapshot.val() || {};
+        set(firebaseRef.current, {
+          ...currentData,
+          pinnedNotes: [...(currentData.pinnedNotes || []), note],
+          lastUpdate: Date.now()
+        });
+      });
+    }
+  }, [newNote, playerName]);
+
+  const handleDeleteNote = useCallback((id) => {
+    setPinnedNotes(prev => prev.filter(note => note.id !== id));
+    
+    if (firebaseRef.current) {
+      get(firebaseRef.current).then((snapshot) => {
+        const currentData = snapshot.val() || {};
+        set(firebaseRef.current, {
+          ...currentData,
+          pinnedNotes: (currentData.pinnedNotes || []).filter(note => note.id !== id),
+          lastUpdate: Date.now()
+        });
+      });
+    }
+  }, []);
 
   // Refs
   const firebaseRef = useRef(null);
@@ -2614,6 +2753,7 @@ export default function App() {
           setInCombat(data.inCombat || false);
           setCurrentTurn(data.currentTurn || 0);
           setPartyLoot(data.partyLoot || initialGameState.partyLoot);
+          setPinnedNotes(data.pinnedNotes || []);
           
           // Only update story text if it's different from current text
           // and if it was updated by someone else
@@ -3075,6 +3215,16 @@ export default function App() {
                     onPress={() => setIsAoeMode(!isAoeMode)}
                   >
                     <Text style={styles.buttonText}>AoE Mode</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.controlButton,
+                      { backgroundColor: showPinnedNotes ? THEME.accent : THEME.background.secondary }
+                    ]}
+                    onPress={() => setShowPinnedNotes(!showPinnedNotes)}
+                  >
+                    <Text style={styles.buttonText}>Pinned Notes</Text>
                   </TouchableOpacity>
                 </View>
               </ScrollView>
@@ -3688,6 +3838,15 @@ export default function App() {
         onClose={() => setShowColorWheel(false)}
         onSelectColor={setCurrentColor}
         initialColor={currentColor}
+      />
+      <PinnedNotesModal
+        visible={showPinnedNotes}
+        onClose={() => setShowPinnedNotes(false)}
+        notes={pinnedNotes}
+        onAddNote={handleAddNote}
+        onDeleteNote={handleDeleteNote}
+        newNote={newNote}
+        setNewNote={setNewNote}
       />
     </SafeAreaView>
   );
