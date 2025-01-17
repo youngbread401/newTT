@@ -129,8 +129,9 @@ const STATUS_EFFECTS = [
 
 // Add this constant near the other constants at the top
 const COMMON_ENEMIES = [
+  // CR 0-1
   {
-    name: 'Bandit',
+    name: "Bandit",
     hp: 11,
     maxHp: 11,
     ac: 12,
@@ -138,7 +139,7 @@ const COMMON_ENEMIES = [
     color: '#8B4513'
   },
   {
-    name: 'Wolf',
+    name: "Wolf",
     hp: 11,
     maxHp: 11,
     ac: 13,
@@ -146,15 +147,7 @@ const COMMON_ENEMIES = [
     color: '#808080'
   },
   {
-    name: 'Wraith',
-    hp: 67,
-    maxHp: 67,
-    ac: 13,
-    initiativeBonus: 2,
-    color: '#4A0404'
-  },
-  {
-    name: 'Goblin',
+    name: "Goblin",
     hp: 7,
     maxHp: 7,
     ac: 15,
@@ -162,7 +155,7 @@ const COMMON_ENEMIES = [
     color: '#355E3B'
   },
   {
-    name: 'Skeleton',
+    name: "Skeleton",
     hp: 13,
     maxHp: 13,
     ac: 13,
@@ -170,12 +163,137 @@ const COMMON_ENEMIES = [
     color: '#E1D9D1'
   },
   {
-    name: 'Zombie',
+    name: "Zombie",
     hp: 22,
     maxHp: 22,
     ac: 8,
     initiativeBonus: -2,
     color: '#4A412A'
+  },
+  // CR 2-3
+  {
+    name: "Ogre",
+    hp: 59,
+    maxHp: 59,
+    ac: 11,
+    initiativeBonus: -1,
+    color: '#8B8970'
+  },
+  {
+    name: "Werewolf",
+    hp: 58,
+    maxHp: 58,
+    ac: 12,
+    initiativeBonus: 1,
+    color: '#504A4B'
+  },
+  {
+    name: "Phase Spider",
+    hp: 32,
+    maxHp: 32,
+    ac: 13,
+    initiativeBonus: 2,
+    color: '#7851A9'
+  },
+  // CR 4-5
+  {
+    name: "Wraith",
+    hp: 67,
+    maxHp: 67,
+    ac: 13,
+    initiativeBonus: 2,
+    color: '#4A0404'
+  },
+  {
+    name: "Troll",
+    hp: 84,
+    maxHp: 84,
+    ac: 15,
+    initiativeBonus: 1,
+    color: '#1B4D3E'
+  },
+  {
+    name: "Hill Giant",
+    hp: 105,
+    maxHp: 105,
+    ac: 13,
+    initiativeBonus: -1,
+    color: '#8B7355'
+  },
+  // CR 6-8
+  {
+    name: "Young White Dragon",
+    hp: 133,
+    maxHp: 133,
+    ac: 17,
+    initiativeBonus: 0,
+    color: '#E8E4E1'
+  },
+  {
+    name: "Hydra",
+    hp: 172,
+    maxHp: 172,
+    ac: 15,
+    initiativeBonus: 1,
+    color: '#006400'
+  },
+  {
+    name: "Frost Giant",
+    hp: 138,
+    maxHp: 138,
+    ac: 15,
+    initiativeBonus: -1,
+    color: '#87CEEB'
+  },
+  // CR 9-12
+  {
+    name: "Fire Giant",
+    hp: 162,
+    maxHp: 162,
+    ac: 18,
+    initiativeBonus: -1,
+    color: '#8B0000'
+  },
+  {
+    name: "Young Red Dragon",
+    hp: 178,
+    maxHp: 178,
+    ac: 18,
+    initiativeBonus: 0,
+    color: '#FF0000'
+  },
+  {
+    name: "Archmage",
+    hp: 99,
+    maxHp: 99,
+    ac: 12,
+    initiativeBonus: 2,
+    color: '#4B0082'
+  },
+  // CR 13+
+  {
+    name: "Adult Blue Dragon",
+    hp: 225,
+    maxHp: 225,
+    ac: 19,
+    initiativeBonus: 0,
+    color: '#0000FF'
+  },
+  {
+    name: "Ancient Green Dragon",
+    hp: 385,
+    maxHp: 385,
+    ac: 21,
+    initiativeBonus: 1,
+    color: '#006400'
+  },
+  {
+    name: "Lich",
+    hp: 135,
+    maxHp: 135,
+    ac: 17,
+    initiativeBonus: 3,
+    color: '#800080'
   }
 ];
 
@@ -2309,6 +2427,87 @@ const PinnedNotesModal = memo(({ visible, onClose, notes, onAddNote, onDeleteNot
   );
 });
 
+// Add this new component near the other modal components
+const RulesModal = memo(({ visible, onClose }) => {
+  if (!visible) return null;
+
+  const rules = [
+    {
+      title: "Ability Checks",
+      content: "Roll d20 + ability modifier + proficiency bonus (if proficient). Compare total against DC (Difficulty Class)."
+    },
+    {
+      title: "Attack Rolls",
+      content: "Roll d20 + ability modifier + proficiency bonus. Compare against target's AC (Armor Class)."
+    },
+    {
+      title: "Saving Throws",
+      content: "Roll d20 + ability modifier + proficiency bonus (if proficient). Compare against DC of effect."
+    },
+    {
+      title: "Advantage/Disadvantage",
+      content: "Roll 2d20. With advantage, take higher roll. With disadvantage, take lower roll."
+    },
+    {
+      title: "Combat Actions",
+      content: "On your turn: Move up to your speed, take one action (Attack, Cast Spell, Dash, Disengage, Dodge, Help, Hide, Ready, Search, Use Object), and one bonus action if available."
+    },
+    {
+      title: "Reactions",
+      content: "One reaction per round. Used for opportunity attacks, certain spells, and special abilities. Resets at start of your turn."
+    },
+    {
+      title: "Death Saves",
+      content: "When at 0 HP, roll d20. 10+ is success, 9- is failure. 3 successes: become stable. 3 failures: die. Natural 20: regain 1 HP. Natural 1: counts as 2 failures."
+    },
+    {
+      title: "Conditions",
+      content: "Common conditions: Blinded, Charmed, Deafened, Frightened, Grappled, Incapacitated, Invisible, Paralyzed, Petrified, Poisoned, Prone, Restrained, Stunned, Unconscious."
+    },
+    {
+      title: "Resting",
+      content: "Short Rest (1+ hour): Use Hit Dice to heal. Long Rest (8 hours): Regain all HP, half total Hit Dice, all spell slots."
+    },
+    {
+      title: "Cover",
+      content: "Half cover: +2 AC and DEX saves. Three-quarters cover: +5 AC and DEX saves. Full cover: Can't be targeted directly."
+    }
+  ];
+
+  return (
+    <Modal
+      visible={visible}
+      transparent={true}
+      animationType="fade"
+      onRequestClose={onClose}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={[styles.modalContent, { width: '90%', maxWidth: 500, maxHeight: '90%' }]}>
+          <Text style={styles.modalTitle}>D&D Basic Rules</Text>
+          <ScrollView style={{ maxHeight: '90%' }}>
+            {rules.map((rule, index) => (
+              <View key={index} style={[styles.infoCard, { marginBottom: 10 }]}>
+                <Text style={[styles.buttonText, { color: THEME.accent, marginBottom: 5, fontWeight: 'bold' }]}>
+                  {rule.title}
+                </Text>
+                <Text style={[styles.buttonText, { fontSize: 14 }]}>
+                  {rule.content}
+                </Text>
+              </View>
+            ))}
+          </ScrollView>
+          <TouchableOpacity
+            style={[styles.modalButton, { backgroundColor: THEME.background.secondary, marginTop: 15 }]}
+            onPress={onClose}
+          >
+            <Text style={styles.buttonText}>Close</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+});
+
 export default function App() {
   // Add calculateModifier here
   const calculateModifier = (score) => {
@@ -2368,6 +2567,7 @@ export default function App() {
   const [pinnedNotes, setPinnedNotes] = useState([]);
   const [newNote, setNewNote] = useState('');
   const [showPinnedNotes, setShowPinnedNotes] = useState(false);
+  const [showRules, setShowRules] = useState(false);
 
   // Add notes styles
   const noteStyles = StyleSheet.create({
@@ -3086,6 +3286,11 @@ export default function App() {
           }}
         />
 
+        <RulesModal
+          visible={showRules}
+          onClose={() => setShowRules(false)}
+        />
+
         {!isConnected ? (
           <View style={styles.loadingContainer}>
             {isLoading ? (
@@ -3223,6 +3428,16 @@ export default function App() {
                     onPress={() => setShowPinnedNotes(!showPinnedNotes)}
                   >
                     <Text style={styles.buttonText}>Pinned Notes</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.controlButton,
+                      { backgroundColor: showRules ? THEME.accent : THEME.background.secondary }
+                    ]}
+                    onPress={() => setShowRules(!showRules)}
+                  >
+                    <Text style={styles.buttonText}>Rules</Text>
                   </TouchableOpacity>
                 </View>
               </ScrollView>
