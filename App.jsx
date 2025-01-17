@@ -2588,11 +2588,7 @@ export default function App() {
       } else {
         // If room exists, check for room-specific character data
         const roomData = snapshot.val();
-        if (roomData.players && roomData.players[playerName]) {
-          const roomCharacters = roomData.players[playerName].characters || [];
-          // Update characters with room-specific data if it exists
-          setCharacters(roomCharacters);
-        } else {
+        if (!roomData.players || !roomData.players[playerName]) {
           // If no room-specific data, update room with player's global characters
           const updatedRoomData = {
             ...roomData,
@@ -2626,14 +2622,19 @@ export default function App() {
             setStoryText(data.campaignStory.text);
           }
 
-          // Only update characters if they've changed
-          if (data.players && data.players[playerName]) {
-            const newCharacters = data.players[playerName].characters || [];
+          // Only update characters if they've changed and new data exists
+          if (data.players?.[playerName]?.characters) {
+            const newCharacters = data.players[playerName].characters;
             setCharacters(prevCharacters => {
-              // Compare lastUpdate timestamps to determine if we should update
-              const prevTimestamp = data.players[playerName].lastUpdate || 0;
-              const currentTimestamp = Date.now();
-              return prevTimestamp > currentTimestamp ? newCharacters : prevCharacters;
+              // Don't update if we have existing characters and new data is empty
+              if (prevCharacters?.length > 0 && (!newCharacters || newCharacters.length === 0)) {
+                return prevCharacters;
+              }
+              // Only update if the data is different
+              if (JSON.stringify(newCharacters) !== JSON.stringify(prevCharacters)) {
+                return newCharacters;
+              }
+              return prevCharacters;
             });
           }
         }
